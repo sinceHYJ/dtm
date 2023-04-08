@@ -44,8 +44,10 @@ func StartSvr() *gin.Engine {
 	})
 
 	// start gin server
+	initProvider()
 	app := dtmutil.GetGinApp()
 	app = httpMetrics(app)
+	app = opentelemetryApp(app)
 	addRoute(app)
 	addJrpcRouter(app)
 	logger.Infof("dtmsvr http listen at: %d", conf.HTTPPort)
