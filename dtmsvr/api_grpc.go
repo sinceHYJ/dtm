@@ -40,7 +40,7 @@ func (s *dtmServer) Abort(ctx context.Context, in *pb.DtmRequest) (*emptypb.Empt
 }
 
 func (s *dtmServer) RegisterBranch(ctx context.Context, in *pb.DtmBranchRequest) (*emptypb.Empty, error) {
-	r := svcRegisterBranch(in.TransType, &TransBranch{
+	r := svcRegisterBranch(ctx, in.TransType, &TransBranch{
 		Gid:      in.Gid,
 		BranchID: in.BranchID,
 		Status:   dtmcli.StatusPrepared,

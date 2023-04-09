@@ -78,7 +78,7 @@ func registerBranch(c *gin.Context) interface{} {
 		Status:   dtmcli.StatusPrepared,
 		BinData:  []byte(data["data"]),
 	}
-	return svcRegisterBranch(data["trans_type"], &branch, data)
+	return svcRegisterBranch(c.Request.Context(), data["trans_type"], &branch, data)
 }
 
 func query(c *gin.Context) interface{} {

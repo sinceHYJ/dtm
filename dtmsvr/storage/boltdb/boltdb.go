@@ -7,6 +7,7 @@
 package boltdb
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -354,7 +355,7 @@ func (s *Store) UpdateBranches(branches []storage.TransBranchStore, updates []st
 }
 
 // LockGlobalSaveBranches creates branches
-func (s *Store) LockGlobalSaveBranches(gid string, status string, branches []storage.TransBranchStore, branchStart int) {
+func (s *Store) LockGlobalSaveBranches(ctx context.Context, gid string, status string, branches []storage.TransBranchStore, branchStart int) {
 	err := s.boltDb.Update(func(t *bolt.Tx) error {
 		g := tGetGlobal(t, gid)
 		if g == nil {
@@ -369,7 +370,7 @@ func (s *Store) LockGlobalSaveBranches(gid string, status string, branches []sto
 }
 
 // MaySaveNewTrans creates a new trans
-func (s *Store) MaySaveNewTrans(global *storage.TransGlobalStore, branches []storage.TransBranchStore) error {
+func (s *Store) MaySaveNewTrans(ctx context.Context, global *storage.TransGlobalStore, branches []storage.TransBranchStore) error {
 	return s.boltDb.Update(func(t *bolt.Tx) error {
 		g := tGetGlobal(t, global.Gid)
 		if g != nil {
@@ -383,7 +384,7 @@ func (s *Store) MaySaveNewTrans(global *storage.TransGlobalStore, branches []sto
 }
 
 // ChangeGlobalStatus changes global trans status
-func (s *Store) ChangeGlobalStatus(global *storage.TransGlobalStore, newStatus string, updates []string, finished bool) {
+func (s *Store) ChangeGlobalStatus(ctx context.Context, global *storage.TransGlobalStore, newStatus string, updates []string, finished bool) {
 	old := global.Status
 	global.Status = newStatus
 	err := s.boltDb.Update(func(t *bolt.Tx) error {

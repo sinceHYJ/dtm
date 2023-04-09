@@ -93,7 +93,7 @@ func (t *TransGlobal) saveNew() ([]TransBranch, error) {
 		branches[i].CreateTime = &now
 		branches[i].UpdateTime = &now
 	}
-	err := GetStore().MaySaveNewTrans(&t.TransGlobalStore, branches)
+	err := GetStore().MaySaveNewTrans(t.Context, &t.TransGlobalStore, branches)
 	logger.Infof("MaySaveNewTrans result: %v, global: %v branches: %v",
 		err, t.TransGlobalStore.String(), dtmimp.MustMarshalString(branches))
 	return branches, err

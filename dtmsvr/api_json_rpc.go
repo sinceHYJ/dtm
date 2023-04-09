@@ -1,6 +1,7 @@
 package dtmsvr
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,11 +23,11 @@ type jrpcReq struct {
 func addJrpcRouter(engine *gin.Engine) {
 	type jrpcFunc = func(interface{}) interface{}
 	handlers := map[string]jrpcFunc{
-		"newGid":         jrpcNewGid,
-		"prepare":        jrpcPrepare,
-		"submit":         jrpcSubmit,
-		"abort":          jrpcAbort,
-		"registerBranch": jrpcRegisterBranch,
+		"newGid":  jrpcNewGid,
+		"prepare": jrpcPrepare,
+		"submit":  jrpcSubmit,
+		"abort":   jrpcAbort,
+		//"registerBranch": jrpcRegisterBranch,
 	}
 	engine.POST("/api/json-rpc", func(c *gin.Context) {
 		began := time.Now()
@@ -123,7 +124,7 @@ func jrpcAbort(params interface{}) interface{} {
 	return svcAbort(TransFromJrpcParams(params))
 }
 
-func jrpcRegisterBranch(params interface{}) interface{} {
+func jrpcRegisterBranch(ctx context.Context, params interface{}) interface{} {
 	data := map[string]string{}
 	dtmimp.MustRemarshal(params, &data)
 	branch := TransBranch{
@@ -132,5 +133,5 @@ func jrpcRegisterBranch(params interface{}) interface{} {
 		Status:   dtmcli.StatusPrepared,
 		BinData:  []byte(data["data"]),
 	}
-	return svcRegisterBranch(data["trans_type"], &branch, data)
+	return svcRegisterBranch(ctx, data["trans_type"], &branch, data)
 }

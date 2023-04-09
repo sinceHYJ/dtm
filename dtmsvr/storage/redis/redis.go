@@ -157,7 +157,7 @@ func callLua(a *argList, lua string) (string, error) {
 }
 
 // MaySaveNewTrans creates a new trans
-func (s *Store) MaySaveNewTrans(global *storage.TransGlobalStore, branches []storage.TransBranchStore) error {
+func (s *Store) MaySaveNewTrans(ctx context.Context, global *storage.TransGlobalStore, branches []storage.TransBranchStore) error {
 	a := newArgList().
 		AppendGid(global.Gid).
 		AppendObject(global).
@@ -185,7 +185,7 @@ redis.call('EXPIRE', KEYS[2], ARGV[2])
 }
 
 // LockGlobalSaveBranches creates branches
-func (s *Store) LockGlobalSaveBranches(gid string, status string, branches []storage.TransBranchStore, branchStart int) {
+func (s *Store) LockGlobalSaveBranches(ctx context.Context, gid string, status string, branches []storage.TransBranchStore, branchStart int) {
 	args := newArgList().
 		AppendGid(gid).
 		AppendRaw(status).
@@ -221,7 +221,7 @@ redis.call('EXPIRE', KEYS[2], ARGV[2])
 }
 
 // ChangeGlobalStatus changes global trans status
-func (s *Store) ChangeGlobalStatus(global *storage.TransGlobalStore, newStatus string, updates []string, finished bool) {
+func (s *Store) ChangeGlobalStatus(ctx context.Context, global *storage.TransGlobalStore, newStatus string, updates []string, finished bool) {
 	old := global.Status
 	global.Status = newStatus
 	args := newArgList().

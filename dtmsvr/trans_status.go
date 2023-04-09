@@ -80,7 +80,7 @@ func (t *TransGlobal) changeStatus(status string, opts ...changeStatusOption) {
 		updates = append(updates, "result")
 	}
 	t.UpdateTime = &now
-	GetStore().ChangeGlobalStatus(&t.TransGlobalStore, status, updates, status == dtmcli.StatusSucceed || status == dtmcli.StatusFailed)
+	GetStore().ChangeGlobalStatus(t.Context, &t.TransGlobalStore, status, updates, status == dtmcli.StatusSucceed || status == dtmcli.StatusFailed)
 	logger.Infof("ChangeGlobalStatus to %s ok for %s", status, t.TransGlobalStore.String())
 	t.Status = status
 }
@@ -91,7 +91,7 @@ func (t *TransGlobal) changeBranchStatus(b *TransBranch, status string, branchPo
 	b.FinishTime = &now
 	b.UpdateTime = &now
 	if conf.Store.Driver != dtmimp.DBTypeMysql && conf.Store.Driver != dtmimp.DBTypePostgres || conf.UpdateBranchSync > 0 || t.updateBranchSync {
-		GetStore().LockGlobalSaveBranches(t.Gid, t.Status, []TransBranch{*b}, branchPos)
+		GetStore().LockGlobalSaveBranches(t.Context, t.Gid, t.Status, []TransBranch{*b}, branchPos)
 		logger.Infof("LockGlobalSaveBranches ok: gid: %s old status: %s branches: %s",
 			b.Gid, dtmcli.StatusPrepared, b.String())
 	} else { // for better performance, batch the updates of branch status

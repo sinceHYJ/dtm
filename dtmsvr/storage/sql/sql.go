@@ -7,6 +7,7 @@
 package sql
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"time"
@@ -84,8 +85,9 @@ func (s *Store) UpdateBranches(branches []storage.TransBranchStore, updates []st
 }
 
 // LockGlobalSaveBranches creates branches
-func (s *Store) LockGlobalSaveBranches(gid string, status string, branches []storage.TransBranchStore, branchStart int) {
-	err := dbGet().Transaction(func(tx *gorm.DB) error {
+func (s *Store) LockGlobalSaveBranches(ctx context.Context, gid string, status string, branches []storage.TransBranchStore, branchStart int) {
+	db := dbGet().WithContext(ctx)
+	err := db.Transaction(func(tx *gorm.DB) error {
 		g := &storage.TransGlobalStore{}
 		dbr := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Model(g).Where("gid=? and status=?", gid, status).First(g)
 		if dbr.Error == nil {
@@ -101,9 +103,10 @@ func (s *Store) LockGlobalSaveBranches(gid string, status string, branches []sto
 }
 
 // MaySaveNewTrans creates a new trans
-func (s *Store) MaySaveNewTrans(global *storage.TransGlobalStore, branches []storage.TransBranchStore) error {
-	return dbGet().Transaction(func(db1 *gorm.DB) error {
-		db := &dtmutil.DB{DB: db1}
+func (s *Store) MaySaveNewTrans(ctx context.Context, global *storage.TransGlobalStore, branches []storage.TransBranchStore) error {
+	db := dbGet().WithContext(ctx)
+	return db.Transaction(func(db1 *gorm.DB) error {
+		db := &dtmutil.DB{DB: db1.WithContext(ctx)}
 		dbr := db.Must().Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).Create(global)
@@ -120,10 +123,11 @@ func (s *Store) MaySaveNewTrans(global *storage.TransGlobalStore, branches []sto
 }
 
 // ChangeGlobalStatus changes global trans status
-func (s *Store) ChangeGlobalStatus(global *storage.TransGlobalStore, newStatus string, updates []string, finished bool) {
+func (s *Store) ChangeGlobalStatus(ctx context.Context, global *storage.TransGlobalStore, newStatus string, updates []string, finished bool) {
 	old := global.Status
 	global.Status = newStatus
-	dbr := dbGet().Must().Model(global).Where("status=? and gid=?", old, global.Gid).Select(updates).Updates(global)
+	db := dbGet().Must().WithContext(ctx)
+	dbr := db.Model(global).Where("status=? and gid=?", old, global.Gid).Select(updates).Updates(global)
 	if dbr.RowsAffected == 0 {
 		dtmimp.E2P(storage.ErrNotFound)
 	}

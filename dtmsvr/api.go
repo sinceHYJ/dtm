@@ -7,6 +7,7 @@
 package dtmsvr
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -86,7 +87,7 @@ func svcForceStop(t *TransGlobal) interface{} {
 	return nil
 }
 
-func svcRegisterBranch(transType string, branch *TransBranch, data map[string]string) error {
+func svcRegisterBranch(ctx context.Context, transType string, branch *TransBranch, data map[string]string) error {
 	branches := []TransBranch{*branch, *branch}
 	if transType == "tcc" {
 		for i, b := range []string{dtmimp.OpCancel, dtmimp.OpConfirm} {
@@ -118,7 +119,7 @@ func svcRegisterBranch(transType string, branch *TransBranch, data map[string]st
 	}
 
 	err := dtmimp.CatchP(func() {
-		GetStore().LockGlobalSaveBranches(branch.Gid, dtmcli.StatusPrepared, branches, -1)
+		GetStore().LockGlobalSaveBranches(ctx, branch.Gid, dtmcli.StatusPrepared, branches, -1)
 	})
 	if err == storage.ErrNotFound {
 		msg := fmt.Sprintf("no trans with gid: %s status: %s found", branch.Gid, dtmcli.StatusPrepared)

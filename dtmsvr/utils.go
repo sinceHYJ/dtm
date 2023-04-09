@@ -7,7 +7,9 @@
 package dtmsvr
 
 import (
+	"context"
 	"fmt"
+	"go.opentelemetry.io/otel/trace"
 	"time"
 
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
@@ -49,4 +51,10 @@ func GetTransGlobal(gid string) *TransGlobal {
 	dtmimp.PanicIf(trans == nil, fmt.Errorf("no TransGlobal with gid: %s found", gid))
 	//nolint:staticcheck
 	return &TransGlobal{TransGlobalStore: *trans}
+}
+
+func copyCtx(ctx context.Context) context.Context {
+	res := context.Background()
+	span := trace.SpanFromContext(ctx)
+	return trace.ContextWithSpan(res, span)
 }

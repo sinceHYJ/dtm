@@ -11,6 +11,7 @@ import (
 	"github.com/dtm-labs/logger"
 	_ "github.com/go-sql-driver/mysql" // register mysql driver
 	_ "github.com/lib/pq"              // register postgres driver
+	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -106,6 +107,7 @@ func DbGet(conf dtmcli.DBConf, ops ...func(*gorm.DB)) *DB {
 		})
 		dtmimp.E2P(err)
 		err = db1.Use(&tracePlugin{})
+		err = db1.Use(otelgorm.NewPlugin())
 		dtmimp.E2P(err)
 		db = &DB{DB: db1}
 		for _, op := range ops {
