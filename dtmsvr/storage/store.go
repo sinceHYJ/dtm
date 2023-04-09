@@ -24,17 +24,17 @@ type Store interface {
 	PopulateData(skipDrop bool)
 	FindTransGlobalStore(gid string) *TransGlobalStore
 	ScanTransGlobalStores(position *string, limit int64) []TransGlobalStore
-	FindBranches(gid string) []TransBranchStore
+	FindBranches(ctx context.Context, gid string) []TransBranchStore
 	UpdateBranches(branches []TransBranchStore, updates []string) (int, error)
 	LockGlobalSaveBranches(ctx context.Context, gid string, status string, branches []TransBranchStore, branchStart int)
 	MaySaveNewTrans(ctx context.Context, global *TransGlobalStore, branches []TransBranchStore) error
 	ChangeGlobalStatus(ctx context.Context, global *TransGlobalStore, newStatus string, updates []string, finished bool)
 	TouchCronTime(global *TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time)
-	LockOneGlobalTrans(expireIn time.Duration) *TransGlobalStore
-	ResetCronTime(after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error)
+	LockOneGlobalTrans(ctx context.Context, expireIn time.Duration) *TransGlobalStore
+	ResetCronTime(ctx context.Context, after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error)
 	ScanKV(cat string, position *string, limit int64) []KVStore
 	FindKV(cat, key string) []KVStore
-	UpdateKV(kv *KVStore) error
+	UpdateKV(ctx context.Context, kv *KVStore) error
 	DeleteKV(cat, key string) error
-	CreateKV(cat, key, value string) error
+	CreateKV(ctx context.Context, cat, key, value string) error
 }

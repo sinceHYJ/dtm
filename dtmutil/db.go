@@ -1,6 +1,7 @@
 package dtmutil
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"sync"
@@ -43,6 +44,12 @@ type DB struct {
 func (m *DB) Must() *DB {
 	db := m.InstanceSet("ivy.must", true)
 	return &DB{DB: db}
+}
+
+// MustWithCtx set must flag, panic when error occur
+func (m *DB) MustWithCtx(ctx context.Context) *DB {
+	db := m.InstanceSet("ivy.must", true)
+	return &DB{DB: db.WithContext(ctx)}
 }
 
 // ToSQLDB get the sql.DB

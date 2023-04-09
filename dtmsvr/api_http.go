@@ -122,7 +122,7 @@ func resetCronTime(c *gin.Context) interface{} {
 	sLimit := dtmimp.OrString(c.Query("limit"), "100")
 	timeout := time.Duration(dtmimp.MustAtoi(sTimeoutSecond)) * time.Second
 
-	succeedCount, hasRemaining, err := GetStore().ResetCronTime(timeout, int64(dtmimp.MustAtoi(sLimit)))
+	succeedCount, hasRemaining, err := GetStore().ResetCronTime(c.Request.Context(), timeout, int64(dtmimp.MustAtoi(sLimit)))
 	if err != nil {
 		return err
 	}

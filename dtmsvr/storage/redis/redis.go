@@ -18,7 +18,8 @@ import (
 	"github.com/dtm-labs/dtm/dtmsvr/storage"
 	"github.com/dtm-labs/dtm/dtmutil"
 	"github.com/dtm-labs/logger"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/extra/redisotel/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 // TODO: optimize this, it's very strange to use pointer to dtmutil.Config
@@ -87,7 +88,7 @@ func (s *Store) ScanTransGlobalStores(position *string, limit int64) []storage.T
 }
 
 // FindBranches finds Branch data by gid
-func (s *Store) FindBranches(gid string) []storage.TransBranchStore {
+func (s *Store) FindBranches(ctx context.Context, gid string) []storage.TransBranchStore {
 	logger.Debugf("calling FindBranches: %s", gid)
 	sa, err := redisGet().LRange(ctx, conf.Store.RedisPrefix+"_b_"+gid, 0, -1).Result()
 	dtmimp.E2P(err)
@@ -150,7 +151,7 @@ func handleRedisResult(ret interface{}, err error) (string, error) {
 	return s, err
 }
 
-func callLua(a *argList, lua string) (string, error) {
+func callLua(ctx context.Context, a *argList, lua string) (string, error) {
 	logger.Debugf("calling lua. args: %v\nlua:%s", a, lua)
 	ret, err := redisGet().Eval(ctx, lua, a.Keys, a.List...).Result()
 	return handleRedisResult(ret, err)
@@ -167,7 +168,7 @@ func (s *Store) MaySaveNewTrans(ctx context.Context, global *storage.TransGlobal
 		AppendBranches(branches)
 	global.Steps = nil
 	global.Payloads = nil
-	_, err := callLua(a, `-- MaySaveNewTrans
+	_, err := callLua(ctx, a, `-- MaySaveNewTrans
 local g = redis.call('GET', KEYS[1])
 if g ~= false then
 	return 'UNIQUE_CONFLICT'
@@ -191,7 +192,7 @@ func (s *Store) LockGlobalSaveBranches(ctx context.Context, gid string, status s
 		AppendRaw(status).
 		AppendRaw(branchStart).
 		AppendBranches(branches)
-	_, err := callLua(args, `-- LockGlobalSaveBranches
+	_, err := callLua(ctx, args, `-- LockGlobalSaveBranches
 local old = redis.call('GET', KEYS[4])
 if old ~= ARGV[3] then
 	return 'NOT_FOUND'
@@ -232,7 +233,7 @@ func (s *Store) ChangeGlobalStatus(ctx context.Context, global *storage.TransGlo
 		AppendRaw(global.Gid).
 		AppendRaw(newStatus).
 		AppendObject(conf.Store.FinishedDataExpire)
-	_, err := callLua(args, `-- ChangeGlobalStatus
+	_, err := callLua(ctx, args, `-- ChangeGlobalStatus
 local old = redis.call('GET', KEYS[4])
 if old ~= ARGV[4] then
   return 'NOT_FOUND'
@@ -250,7 +251,7 @@ end
 }
 
 // LockOneGlobalTrans finds GlobalTrans
-func (s *Store) LockOneGlobalTrans(expireIn time.Duration) *storage.TransGlobalStore {
+func (s *Store) LockOneGlobalTrans(ctx context.Context, expireIn time.Duration) *storage.TransGlobalStore {
 	expired := time.Now().Add(expireIn).Unix()
 	next := time.Now().Add(time.Duration(conf.RetryInterval) * time.Second).Unix()
 	args := newArgList().AppendGid("").AppendRaw(expired).AppendRaw(next)
@@ -268,7 +269,7 @@ redis.call('ZADD', KEYS[3], ARGV[4], gid)
 return gid
 `
 	for {
-		r, err := callLua(args, lua)
+		r, err := callLua(ctx, args, lua)
 		if errors.Is(err, storage.ErrNotFound) {
 			return nil
 		}
@@ -282,7 +283,7 @@ return gid
 
 // ResetCronTime reset nextCronTime
 // unfinished transactions need to be retried as soon as possible after business downtime is recovered
-func (s *Store) ResetCronTime(after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error) {
+func (s *Store) ResetCronTime(ctx context.Context, after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error) {
 	next := time.Now().Unix()
 	timeoutTimestamp := time.Now().Add(after).Unix()
 	args := newArgList().AppendGid("").AppendRaw(timeoutTimestamp).AppendRaw(next).AppendRaw(limit)
@@ -300,7 +301,7 @@ end
 return tostring(i)
 `
 	r := ""
-	r, err = callLua(args, lua)
+	r, err = callLua(ctx, args, lua)
 	dtmimp.E2P(err)
 	succeedCount = int64(dtmimp.MustAtoi(r))
 	if succeedCount > limit {
@@ -321,7 +322,7 @@ func (s *Store) TouchCronTime(global *storage.TransGlobalStore, nextCronInterval
 		AppendRaw(global.NextCronTime.Unix()).
 		AppendRaw(global.Status).
 		AppendRaw(global.Gid)
-	_, err := callLua(args, `-- TouchCronTime
+	_, err := callLua(ctx, args, `-- TouchCronTime
 local old = redis.call('GET', KEYS[4])
 if old ~= ARGV[5] then
 	return 'NOT_FOUND'
@@ -396,7 +397,7 @@ func (s *Store) FindKV(cat, key string) []storage.KVStore {
 }
 
 // UpdateKV updates key-value pair
-func (s *Store) UpdateKV(kv *storage.KVStore) error {
+func (s *Store) UpdateKV(ctx context.Context, kv *storage.KVStore) error {
 	now := time.Now()
 	kv.UpdateTime = &now
 	oldVersion := kv.Version
@@ -407,7 +408,7 @@ func (s *Store) UpdateKV(kv *storage.KVStore) error {
 	args.Keys = append(args.Keys, redisKey)
 	args.AppendRaw(oldVersion)
 	args.AppendObject(kv)
-	_, err := callLua(args, `-- UpdateKV
+	_, err := callLua(ctx, args, `-- UpdateKV
 local oldJson = redis.call('GET', KEYS[1])
 if oldJson == false then
 	return 'NOT_FOUND'
@@ -432,7 +433,7 @@ func (s *Store) DeleteKV(cat, key string) error {
 }
 
 // CreateKV creates key-value pair
-func (s *Store) CreateKV(cat, key, value string) error {
+func (s *Store) CreateKV(ctx context.Context, cat, key, value string) error {
 	now := time.Now()
 	kv := &storage.KVStore{
 		ModelBase: dtmutil.ModelBase{
@@ -448,7 +449,7 @@ func (s *Store) CreateKV(cat, key, value string) error {
 	args := &argList{}
 	args.Keys = append(args.Keys, redisKey)
 	args.AppendObject(kv)
-	_, err := callLua(args, `-- CreateKV
+	_, err := callLua(ctx, args, `-- CreateKV
 local key = redis.call('GET', KEYS[1])
 if key ~= false then
 	return 'UNIQUE_CONFLICT'
@@ -471,6 +472,10 @@ func redisGet() *redis.Client {
 			Username: conf.Store.User,
 			Password: conf.Store.Password,
 		})
+		err := redisotel.InstrumentTracing(rdb)
+		if err != nil {
+			panic(err)
+		}
 	})
 	return rdb
 }

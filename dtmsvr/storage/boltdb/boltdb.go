@@ -339,7 +339,7 @@ func (s *Store) ScanTransGlobalStores(position *string, limit int64) []storage.T
 }
 
 // FindBranches finds Branch data by gid
-func (s *Store) FindBranches(gid string) []storage.TransBranchStore {
+func (s *Store) FindBranches(ctx context.Context, gid string) []storage.TransBranchStore {
 	var branches []storage.TransBranchStore
 	err := s.boltDb.View(func(t *bolt.Tx) error {
 		branches = tGetBranches(t, gid)
@@ -421,7 +421,7 @@ func (s *Store) TouchCronTime(global *storage.TransGlobalStore, nextCronInterval
 }
 
 // LockOneGlobalTrans finds GlobalTrans
-func (s *Store) LockOneGlobalTrans(expireIn time.Duration) *storage.TransGlobalStore {
+func (s *Store) LockOneGlobalTrans(ctx context.Context, expireIn time.Duration) *storage.TransGlobalStore {
 	var trans *storage.TransGlobalStore
 	min := fmt.Sprintf("%d", time.Now().Add(expireIn).Unix())
 	err := s.boltDb.Update(func(t *bolt.Tx) error {
@@ -450,7 +450,7 @@ func (s *Store) LockOneGlobalTrans(expireIn time.Duration) *storage.TransGlobalS
 
 // ResetCronTime reset nextCronTime
 // unfinished transactions need to be retried as soon as possible after business downtime is recovered
-func (s *Store) ResetCronTime(after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error) {
+func (s *Store) ResetCronTime(ctx context.Context, after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error) {
 	next := time.Now()
 	var trans *storage.TransGlobalStore
 	min := fmt.Sprintf("%d", time.Now().Add(after).Unix())
@@ -538,7 +538,7 @@ func (s *Store) FindKV(cat, key string) []storage.KVStore {
 }
 
 // UpdateKV updates key-value pair
-func (s *Store) UpdateKV(kv *storage.KVStore) error {
+func (s *Store) UpdateKV(ctx context.Context, kv *storage.KVStore) error {
 	now := time.Now()
 	kv.UpdateTime = &now
 	oldVersion := kv.Version
@@ -567,7 +567,7 @@ func (s *Store) DeleteKV(cat, key string) error {
 }
 
 // CreateKV creates key-value pair
-func (s *Store) CreateKV(cat, key, value string) error {
+func (s *Store) CreateKV(ctx context.Context, cat, key, value string) error {
 	now := time.Now()
 	kv := &storage.KVStore{
 		ModelBase: dtmutil.ModelBase{

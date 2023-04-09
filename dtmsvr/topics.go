@@ -1,6 +1,7 @@
 package dtmsvr
 
 import (
+	"context"
 	"errors"
 
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
@@ -48,8 +49,10 @@ func Subscribe(topic, url, remark string) error {
 		Remark: remark,
 	}
 	kvs := GetStore().FindKV(topicsCat, topic)
+	// TODO heyj 处理ctx
+	ctx := context.Background()
 	if len(kvs) == 0 {
-		return GetStore().CreateKV(topicsCat, topic, dtmimp.MustMarshalString([]Subscriber{newSubscriber}))
+		return GetStore().CreateKV(ctx, topicsCat, topic, dtmimp.MustMarshalString([]Subscriber{newSubscriber}))
 	}
 
 	subscribers := []Subscriber{}
@@ -61,7 +64,7 @@ func Subscribe(topic, url, remark string) error {
 	}
 	subscribers = append(subscribers, newSubscriber)
 	kvs[0].V = dtmimp.MustMarshalString(subscribers)
-	return GetStore().UpdateKV(&kvs[0])
+	return GetStore().UpdateKV(ctx, &kvs[0])
 }
 
 // Unsubscribe unsubscribes the topic
@@ -93,7 +96,9 @@ func Unsubscribe(topic, url string) error {
 		return errors.New("no such an url ")
 	}
 	kvs[0].V = dtmimp.MustMarshalString(subscribers)
-	return GetStore().UpdateKV(&kvs[0])
+	//TODO heyjd 处理context
+
+	return GetStore().UpdateKV(context.Background(), &kvs[0])
 }
 
 // updateTopicsMap updates the topicsMap variable, unsafe for concurrent

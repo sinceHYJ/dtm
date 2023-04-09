@@ -30,10 +30,10 @@ func svcSubmit(t *TransGlobal) interface{} {
 	branches, err := t.saveNew()
 
 	if err == storage.ErrUniqueConflict {
-		dbt := GetTransGlobal(t.Gid)
+		dbt := GetTransGlobal(t.Context, t.Gid)
 		if dbt.Status == dtmcli.StatusPrepared {
 			dbt.changeStatus(t.Status)
-			branches = GetStore().FindBranches(t.Gid)
+			branches = GetStore().FindBranches(t.Context, t.Gid)
 		} else if dbt.Status != dtmcli.StatusSubmitted {
 			return fmt.Errorf("current status '%s', cannot sumbmit. %w", dbt.Status, dtmcli.ErrFailure)
 		}
@@ -45,7 +45,7 @@ func svcPrepare(t *TransGlobal) interface{} {
 	t.Status = dtmcli.StatusPrepared
 	_, err := t.saveNew()
 	if err == storage.ErrUniqueConflict {
-		dbt := GetTransGlobal(t.Gid)
+		dbt := GetTransGlobal(t.Context, t.Gid)
 		if dbt.Status != dtmcli.StatusPrepared {
 			return fmt.Errorf("current status '%s', cannot prepare. %w", dbt.Status, dtmcli.ErrFailure)
 		}
@@ -59,13 +59,13 @@ func svcPrepareWorkflow(t *TransGlobal) (*storage.TransGlobalStore, []TransBranc
 	_, err := t.saveNew()
 	if err == storage.ErrUniqueConflict { // transaction exists, query the branches
 		st := GetStore()
-		return st.FindTransGlobalStore(t.Gid), st.FindBranches(t.Gid), nil
+		return st.FindTransGlobalStore(t.Gid), st.FindBranches(t.Context, t.Gid), nil
 	}
 	return &t.TransGlobalStore, []TransBranch{}, err
 }
 
 func svcAbort(t *TransGlobal) interface{} {
-	dbt := GetTransGlobal(t.Gid)
+	dbt := GetTransGlobal(t.Context, t.Gid)
 	if dbt.TransType == "msg" && dbt.Status == dtmcli.StatusPrepared {
 		dbt.changeStatus(dtmcli.StatusFailed)
 		return nil
@@ -74,12 +74,12 @@ func svcAbort(t *TransGlobal) interface{} {
 		return fmt.Errorf("trans type: '%s' current status '%s', cannot abort. %w", dbt.TransType, dbt.Status, dtmcli.ErrFailure)
 	}
 	dbt.changeStatus(dtmcli.StatusAborting, withRollbackReason(t.RollbackReason))
-	branches := GetStore().FindBranches(t.Gid)
+	branches := GetStore().FindBranches(t.Context, t.Gid)
 	return dbt.Process(branches)
 }
 
 func svcForceStop(t *TransGlobal) interface{} {
-	dbt := GetTransGlobal(t.Gid)
+	dbt := GetTransGlobal(t.Context, t.Gid)
 	if dbt.Status == dtmcli.StatusSucceed || dbt.Status == dtmcli.StatusFailed {
 		return fmt.Errorf("global transaction force stop error. status: %s. error: %w", dbt.Status, dtmcli.ErrFailure)
 	}

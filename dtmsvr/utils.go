@@ -45,12 +45,13 @@ func GenGid() string {
 }
 
 // GetTransGlobal construct trans from db
-func GetTransGlobal(gid string) *TransGlobal {
+func GetTransGlobal(ctx context.Context, gid string) *TransGlobal {
+	//TODO heyjd 增加ctx
 	trans := GetStore().FindTransGlobalStore(gid)
 	//nolint:staticcheck
 	dtmimp.PanicIf(trans == nil, fmt.Errorf("no TransGlobal with gid: %s found", gid))
 	//nolint:staticcheck
-	return &TransGlobal{TransGlobalStore: *trans}
+	return &TransGlobal{TransGlobalStore: *trans, Context: ctx}
 }
 
 func copyCtx(ctx context.Context) context.Context {

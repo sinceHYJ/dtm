@@ -7,8 +7,10 @@
 package dtmsvr
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel"
 	"math/rand"
 	"runtime/debug"
 	"time"
@@ -27,15 +29,18 @@ var CronForwardDuration = time.Duration(0)
 // CronTransOnce cron expired trans. use expireIn as expire time
 func CronTransOnce() (gid string) {
 	defer handlePanic(nil)
-	trans := lockOneTrans(CronForwardDuration)
+	tracer := otel.GetTracerProvider().Tracer("cron")
+	ctx, span := tracer.Start(context.Background(), "cron")
+	trans := lockOneTrans(ctx, CronForwardDuration)
 	if trans == nil {
 		return
 	}
 	gid = trans.Gid
 	trans.WaitResult = true
-	branches := GetStore().FindBranches(gid)
+	branches := GetStore().FindBranches(ctx, gid)
 	err := trans.Process(branches)
 	dtmimp.PanicIf(err != nil && !errors.Is(err, dtmcli.ErrFailure) && !errors.Is(err, dtmcli.ErrOngoing), err)
+	span.End()
 	return
 }
 
@@ -62,13 +67,13 @@ func cronUpdateTopicsMapOnce() {
 	updateTopicsMap()
 }
 
-func lockOneTrans(expireIn time.Duration) *TransGlobal {
-	global := GetStore().LockOneGlobalTrans(expireIn)
+func lockOneTrans(ctx context.Context, expireIn time.Duration) *TransGlobal {
+	global := GetStore().LockOneGlobalTrans(ctx, expireIn)
 	if global == nil {
 		return nil
 	}
 	logger.Infof("cron job return a trans: %s", global.String())
-	return &TransGlobal{TransGlobalStore: *global}
+	return &TransGlobal{TransGlobalStore: *global, Context: ctx}
 }
 
 func handlePanic(perr *error) {

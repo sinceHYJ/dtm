@@ -69,9 +69,9 @@ func (s *Store) ScanTransGlobalStores(position *string, limit int64) []storage.T
 }
 
 // FindBranches finds Branch data by gid
-func (s *Store) FindBranches(gid string) []storage.TransBranchStore {
+func (s *Store) FindBranches(ctx context.Context, gid string) []storage.TransBranchStore {
 	branches := []storage.TransBranchStore{}
-	dbGet().Must().Where("gid=?", gid).Order("id asc").Find(&branches)
+	dbGet().MustWithCtx(ctx).Where("gid=?", gid).Order("id asc").Find(&branches)
 	return branches
 }
 
@@ -143,8 +143,9 @@ func (s *Store) TouchCronTime(global *storage.TransGlobalStore, nextCronInterval
 }
 
 // LockOneGlobalTrans finds GlobalTrans
-func (s *Store) LockOneGlobalTrans(expireIn time.Duration) *storage.TransGlobalStore {
+func (s *Store) LockOneGlobalTrans(ctx context.Context, expireIn time.Duration) *storage.TransGlobalStore {
 	db := dbGet()
+	db.DB = db.DB.WithContext(ctx)
 	owner := shortuuid.New()
 	nextCronTime := getTimeStr(int64(expireIn / time.Second))
 	where := map[string]string{
@@ -178,7 +179,7 @@ func (s *Store) LockOneGlobalTrans(expireIn time.Duration) *storage.TransGlobalS
 
 // ResetCronTime reset nextCronTime
 // unfinished transactions need to be retried as soon as possible after business downtime is recovered
-func (s *Store) ResetCronTime(after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error) {
+func (s *Store) ResetCronTime(ctx context.Context, after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error) {
 	nextCronTime := getTimeStr(int64(after / time.Second))
 	where := map[string]string{
 		dtmimp.DBTypeMysql:    fmt.Sprintf(`next_cron_time > '%s' and status in ('prepared', 'aborting', 'submitted') limit %d`, nextCronTime, limit),
@@ -189,6 +190,7 @@ func (s *Store) ResetCronTime(after time.Duration, limit int64) (succeedCount in
 		getTimeStr(0),
 		getTimeStr(0),
 		where)
+	// TODO heyjd 需要处理sql DB
 	affected, err := dtmimp.DBExec(conf.Store.Driver, dbGet().ToSQLDB(), sql)
 	return affected, affected == limit, err
 }
@@ -224,12 +226,13 @@ func (s *Store) FindKV(cat, key string) []storage.KVStore {
 }
 
 // UpdateKV updates key-value pair
-func (s *Store) UpdateKV(kv *storage.KVStore) error {
+func (s *Store) UpdateKV(ctx context.Context, kv *storage.KVStore) error {
 	now := time.Now()
 	kv.UpdateTime = &now
 	oldVersion := kv.Version
 	kv.Version = oldVersion + 1
-	dbr := dbGet().Model(&storage.KVStore{}).Where("id=? and version=?", kv.ID, oldVersion).
+	db := dbGet().WithContext(ctx)
+	dbr := db.Model(&storage.KVStore{}).Where("id=? and version=?", kv.ID, oldVersion).
 		Updates(kv)
 	if dbr.Error == nil && dbr.RowsAffected == 0 {
 		return storage.ErrNotFound
@@ -247,7 +250,7 @@ func (s *Store) DeleteKV(cat, key string) error {
 }
 
 // CreateKV creates key-value pair
-func (s *Store) CreateKV(cat, key, value string) error {
+func (s *Store) CreateKV(ctx context.Context, cat, key, value string) error {
 	now := time.Now()
 	kv := &storage.KVStore{
 		ModelBase: dtmutil.ModelBase{
@@ -259,7 +262,8 @@ func (s *Store) CreateKV(cat, key, value string) error {
 		V:       value,
 		Version: 1,
 	}
-	dbr := dbGet().Clauses(clause.OnConflict{
+	db := dbGet().WithContext(ctx)
+	dbr := db.Clauses(clause.OnConflict{
 		DoNothing: true,
 	}).Create(kv)
 	if dbr.Error == nil && dbr.RowsAffected == 0 {
