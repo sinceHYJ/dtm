@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"time"
 
 	"github.com/dtm-labs/logger"
@@ -47,8 +48,8 @@ func GetStore() storage.Store {
 }
 
 // WaitStoreUp wait for db to go up
-func WaitStoreUp() {
-	for err := GetStore().Ping(); err != nil; err = GetStore().Ping() {
+func WaitStoreUp(ctx context.Context) {
+	for err := GetStore().Ping(ctx); err != nil; err = GetStore().Ping(ctx) {
 		logger.Infof("wait store up: %v", err)
 		time.Sleep(3 * time.Second)
 	}

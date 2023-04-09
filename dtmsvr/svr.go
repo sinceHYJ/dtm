@@ -12,6 +12,8 @@ import (
 	"net"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+
 	"github.com/dtm-labs/dtm/client/dtmgrpc"
 	"github.com/gin-gonic/gin"
 
@@ -28,7 +30,7 @@ import (
 )
 
 // StartSvr StartSvr
-func StartSvr() *gin.Engine {
+func StartSvr(ctx context.Context) *gin.Engine {
 	logger.Infof("start dtmsvr")
 	setServerInfoMetrics()
 
@@ -44,7 +46,6 @@ func StartSvr() *gin.Engine {
 	})
 
 	// start gin server
-	initProvider()
 	app := dtmutil.GetGinApp()
 	app = httpMetrics(app)
 	app = opentelemetryApp(app)
@@ -86,8 +87,8 @@ func StartSvr() *gin.Engine {
 }
 
 // PopulateDB setup mysql data
-func PopulateDB(skipDrop bool) {
-	GetStore().PopulateData(skipDrop)
+func PopulateDB(ctx context.Context, skipDrop bool) {
+	GetStore().PopulateData(ctx, skipDrop)
 }
 
 // UpdateBranchAsyncInterval interval to flush branch
@@ -145,4 +146,9 @@ func grpcRecover(ctx context.Context, req interface{}, info *grpc.UnaryServerInf
 	}()
 	res, rerr = handler(ctx, req)
 	return
+}
+
+func opentelemetryApp(app *gin.Engine) *gin.Engine {
+	app.Use(otelgin.Middleware("dtmsrv"))
+	return app
 }

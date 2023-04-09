@@ -1,8 +1,10 @@
 package entry
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"github.com/dtm-labs/dtm/dtmutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -53,12 +55,17 @@ func Main(version *string) (*gin.Engine, *config.Type) {
 		conf.LogLevel = "debug"
 	}
 	logger.InitLog2(conf.LogLevel, conf.Log.Outputs, conf.Log.RotationEnable, conf.Log.RotationConfigJSON)
+	ctx := context.Background()
+	_, _ = initProvider(ctx)
+	ctx, span := dtmutil.StartSpan(ctx, "dtm_start", "dtm_start")
+	defer span.End()
 	if *isReset {
-		dtmsvr.PopulateDB(false)
+		dtmsvr.PopulateDB(ctx, false)
 	}
 	_, _ = maxprocs.Set(maxprocs.Logger(logger.Infof))
-	registry.WaitStoreUp()
-	app := dtmsvr.StartSvr()       // start dtmsvr api
+	registry.WaitStoreUp(ctx)
+	app := dtmsvr.StartSvr(ctx)    // start dtmsvr api
 	go dtmsvr.CronExpiredTrans(-1) // start dtmsvr cron job
+	span.End()
 	return app, &config.Config
 }

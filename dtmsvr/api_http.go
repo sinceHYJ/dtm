@@ -87,7 +87,7 @@ func query(c *gin.Context) interface{} {
 		return errors.New("no gid specified")
 	}
 	trans := GetStore().FindTransGlobalStore(gid)
-	branches := GetStore().FindBranches(gid)
+	branches := GetStore().FindBranches(c.Request.Context(), gid)
 	return map[string]interface{}{"transaction": trans, "branches": branches}
 }
 

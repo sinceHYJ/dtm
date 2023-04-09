@@ -274,12 +274,12 @@ func tDelKV(t *bolt.Tx, cat, key string) {
 }
 
 // Ping execs ping cmd to boltdb
-func (s *Store) Ping() error {
+func (s *Store) Ping(ctx context.Context) error {
 	return nil
 }
 
 // PopulateData populates data to boltdb
-func (s *Store) PopulateData(skipDrop bool) {
+func (s *Store) PopulateData(ctx context.Context, skipDrop bool) {
 	if !skipDrop {
 		err := s.boltDb.Update(func(t *bolt.Tx) error {
 			dtmimp.E2P(t.DeleteBucket(bucketIndex))

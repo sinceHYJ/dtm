@@ -8,6 +8,7 @@ package dtmutil
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -16,6 +17,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
@@ -172,4 +176,9 @@ func RunSQLScript(conf dtmcli.DBConf, script string, skipDrop bool) {
 		logger.FatalIfError(err)
 		logger.Infof("sql scripts finished: %s", s)
 	}
+}
+
+func StartSpan(ctx context.Context, tracerName, spanName string) (context.Context, trace.Span) {
+	tracer := otel.GetTracerProvider().Tracer(tracerName)
+	return tracer.Start(ctx, spanName)
 }

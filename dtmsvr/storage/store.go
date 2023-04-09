@@ -20,8 +20,8 @@ var ErrUniqueConflict = errors.New("storage: UniqueKeyConflict")
 
 // Store defines storage relevant interface
 type Store interface {
-	Ping() error
-	PopulateData(skipDrop bool)
+	Ping(ctx context.Context) error
+	PopulateData(ctx context.Context, skipDrop bool)
 	FindTransGlobalStore(gid string) *TransGlobalStore
 	ScanTransGlobalStores(position *string, limit int64) []TransGlobalStore
 	FindBranches(ctx context.Context, gid string) []TransBranchStore

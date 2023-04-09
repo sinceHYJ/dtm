@@ -28,7 +28,8 @@ type Store struct {
 }
 
 // Ping execs ping cmd to db
-func (s *Store) Ping() error {
+func (s *Store) Ping(ctx context.Context) error {
+	// TODO heyjd 待补充
 	db, err := dtmimp.StandaloneDB(conf.Store.GetDBConf())
 	dtmimp.E2P(err)
 	_, err = db.Exec("select 1")
@@ -36,8 +37,9 @@ func (s *Store) Ping() error {
 }
 
 // PopulateData populates data to db
-func (s *Store) PopulateData(skipDrop bool) {
+func (s *Store) PopulateData(ctx context.Context, skipDrop bool) {
 	file := fmt.Sprintf("%s/dtmsvr.storage.%s.sql", dtmutil.GetSQLDir(), conf.Store.Driver)
+	//TODO heyjd 待补充
 	dtmutil.RunSQLScript(conf.Store.GetDBConf(), file, skipDrop)
 }
 

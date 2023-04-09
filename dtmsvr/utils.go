@@ -9,8 +9,9 @@ package dtmsvr
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel/trace"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
 	"github.com/dtm-labs/dtm/dtmsvr/config"

@@ -10,10 +10,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/otel"
 	"math/rand"
 	"runtime/debug"
 	"time"
+
+	"github.com/dtm-labs/dtm/dtmutil"
 
 	"github.com/dtm-labs/dtm/client/dtmcli"
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
@@ -29,8 +30,8 @@ var CronForwardDuration = time.Duration(0)
 // CronTransOnce cron expired trans. use expireIn as expire time
 func CronTransOnce() (gid string) {
 	defer handlePanic(nil)
-	tracer := otel.GetTracerProvider().Tracer("cron")
-	ctx, span := tracer.Start(context.Background(), "cron")
+	ctx, span := dtmutil.StartSpan(context.Background(), "cron", "cronTransOnce")
+	defer span.End()
 	trans := lockOneTrans(ctx, CronForwardDuration)
 	if trans == nil {
 		return
@@ -68,7 +69,9 @@ func cronUpdateTopicsMapOnce() {
 }
 
 func lockOneTrans(ctx context.Context, expireIn time.Duration) *TransGlobal {
-	global := GetStore().LockOneGlobalTrans(ctx, expireIn)
+	lockOneTransCtx, span := dtmutil.StartSpan(ctx, "cron", "lockOneTrans")
+	defer span.End()
+	global := GetStore().LockOneGlobalTrans(lockOneTransCtx, expireIn)
 	if global == nil {
 		return nil
 	}

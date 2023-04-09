@@ -1,15 +1,13 @@
-package dtmsvr
+package entry
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -18,13 +16,11 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
-func initProvider() (func(context.Context) error, error) {
-	ctx := context.Background()
-
+func initProvider(ctx context.Context) (func(context.Context) error, error) {
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			// the service name used to display traces in backends
-			semconv.ServiceName("dtmsrv"),
+			semconv.ServiceName("dtmsvr"),
 		),
 	)
 	if err != nil {
@@ -68,9 +64,4 @@ func initProvider() (func(context.Context) error, error) {
 
 	// Shutdown will flush any remaining spans and shut down the exporter.
 	return tracerProvider.Shutdown, nil
-}
-
-func opentelemetryApp(app *gin.Engine) *gin.Engine {
-	app.Use(otelgin.Middleware("dtmsrv"))
-	return app
 }

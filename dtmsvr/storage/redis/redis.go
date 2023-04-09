@@ -33,13 +33,13 @@ type Store struct {
 }
 
 // Ping execs ping cmd to redis
-func (s *Store) Ping() error {
+func (s *Store) Ping(ctx context.Context) error {
 	_, err := redisGet().Ping(ctx).Result()
 	return err
 }
 
 // PopulateData populates data to redis
-func (s *Store) PopulateData(skipDrop bool) {
+func (s *Store) PopulateData(ctx context.Context, skipDrop bool) {
 	if !skipDrop {
 		_, err := redisGet().FlushAll(ctx).Result()
 		logger.Infof("call redis flushall. result: %v", err)
