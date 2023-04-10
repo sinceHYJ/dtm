@@ -56,15 +56,17 @@ func CronExpiredTrans(num int) {
 }
 
 // CronUpdateTopicsMap cron updates topics map
-func CronUpdateTopicsMap(ctx context.Context) {
+func CronUpdateTopicsMap() {
 	for {
 		time.Sleep(time.Duration(conf.ConfigUpdateInterval) * time.Second)
-		cronUpdateTopicsMapOnce(ctx)
+		cronUpdateTopicsMapOnce()
 	}
 }
 
-func cronUpdateTopicsMapOnce(ctx context.Context) {
+func cronUpdateTopicsMapOnce() {
 	defer handlePanic(nil)
+	ctx, span := dtmutil.StartSpan(context.Background(), "cronUpdateTopicsMapOnce", "cronUpdateTopicsMapOnce")
+	defer span.End()
 	updateTopicsMap(ctx)
 }
 

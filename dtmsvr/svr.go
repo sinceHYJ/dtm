@@ -73,10 +73,10 @@ func StartSvr(ctx context.Context) *gin.Engine {
 	}()
 
 	for i := 0; i < int(conf.UpdateBranchAsyncGoroutineNum); i++ {
-		go updateBranchAsync(ctx)
+		go updateBranchAsync()
 	}
 	updateTopicsMap(ctx)
-	go CronUpdateTopicsMap(ctx)
+	go CronUpdateTopicsMap()
 
 	time.Sleep(100 * time.Millisecond)
 	err = dtmdriver.Use(conf.MicroService.Driver)
@@ -96,9 +96,11 @@ func PopulateDB(ctx context.Context, skipDrop bool) {
 var UpdateBranchAsyncInterval = 200 * time.Millisecond
 var updateBranchAsyncChan = make(chan branchStatus, 1000)
 
-func updateBranchAsync(ctx context.Context) {
+func updateBranchAsync() {
 	flushBranchs := func() {
 		defer dtmutil.RecoverPanic(nil)
+		ctx, span := dtmutil.StartSpan(context.Background(), "updateBranchAsync", "updateBranchAsync")
+		defer span.End()
 		updates := []TransBranch{}
 		exists := map[string]bool{}
 		started := time.Now()
