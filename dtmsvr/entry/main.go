@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/dtm-labs/dtm/dtmutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/dtm-labs/dtm/dtmsvr"
 	"github.com/dtm-labs/dtm/dtmsvr/config"
 	"github.com/dtm-labs/dtm/dtmsvr/storage/registry"
+	"github.com/dtm-labs/dtm/dtmutil"
 	"github.com/dtm-labs/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -56,7 +56,10 @@ func Main(version *string) (*gin.Engine, *config.Type) {
 	}
 	logger.InitLog2(conf.LogLevel, conf.Log.Outputs, conf.Log.RotationEnable, conf.Log.RotationConfigJSON)
 	ctx := context.Background()
-	_, _ = initProvider(ctx)
+	_, err := initProvider(ctx, config.Config.OtelEndpoint)
+	if err != nil {
+		panic(err)
+	}
 	ctx, span := dtmutil.StartSpan(ctx, "dtm_start", "dtm_start")
 	defer span.End()
 	if *isReset {

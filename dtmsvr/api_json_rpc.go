@@ -27,6 +27,7 @@ func addJrpcRouter(engine *gin.Engine) {
 		"prepare": jrpcPrepare,
 		"submit":  jrpcSubmit,
 		"abort":   jrpcAbort,
+		// TODO heyjd
 		//"registerBranch": jrpcRegisterBranch,
 	}
 	engine.POST("/api/json-rpc", func(c *gin.Context) {

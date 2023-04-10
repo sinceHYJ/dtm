@@ -12,8 +12,6 @@ import (
 	"net"
 	"time"
 
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-
 	"github.com/dtm-labs/dtm/client/dtmgrpc"
 	"github.com/gin-gonic/gin"
 
@@ -23,6 +21,7 @@ import (
 	"github.com/dtm-labs/dtm/dtmutil"
 	"github.com/dtm-labs/dtmdriver"
 	"github.com/dtm-labs/logger"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

@@ -102,6 +102,7 @@ type Type struct {
 	AlertRetryLimit               int64            `yaml:"AlertRetryLimit" default:"3"`
 	AlertWebHook                  string           `yaml:"AlertWebHook"`
 	AdminBasePath                 string           `yaml:"AdminBasePath"`
+	OtelEndpoint                  string           `yaml:"OtelEndpoint"`
 }
 
 // Config config
