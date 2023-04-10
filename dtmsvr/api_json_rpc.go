@@ -21,20 +21,20 @@ type jrpcReq struct {
 }
 
 func addJrpcRouter(engine *gin.Engine) {
-	type jrpcFunc = func(interface{}) interface{}
+	type jrpcFunc = func(context.Context, interface{}) interface{}
 	handlers := map[string]jrpcFunc{
-		"newGid":  jrpcNewGid,
-		"prepare": jrpcPrepare,
-		"submit":  jrpcSubmit,
-		"abort":   jrpcAbort,
-		// TODO heyjd
-		//"registerBranch": jrpcRegisterBranch,
+		"newGid":         jrpcNewGid,
+		"prepare":        jrpcPrepare,
+		"submit":         jrpcSubmit,
+		"abort":          jrpcAbort,
+		"registerBranch": jrpcRegisterBranch,
 	}
 	engine.POST("/api/json-rpc", func(c *gin.Context) {
 		began := time.Now()
 		var err error
 		var req jrpcReq
 		var jerr map[string]interface{}
+		ctx := c.Request.Context()
 		r := func() interface{} {
 			defer dtmimp.P2E(&err)
 			err2 := c.BindJSON(&req)
@@ -54,7 +54,7 @@ func addJrpcRouter(engine *gin.Engine) {
 					"message": fmt.Sprintf("Method not found: %s", req.Method),
 				}
 			} else if handlers[req.Method] != nil {
-				return handlers[req.Method](req.Params)
+				return handlers[req.Method](ctx, req.Params)
 			}
 			return nil
 		}()
@@ -109,19 +109,19 @@ func TransFromJrpcParams(params interface{}) *TransGlobal {
 	return &t
 }
 
-func jrpcNewGid(interface{}) interface{} {
+func jrpcNewGid(ctx context.Context, params interface{}) interface{} {
 	return map[string]interface{}{"gid": GenGid()}
 }
 
-func jrpcPrepare(params interface{}) interface{} {
+func jrpcPrepare(ctx context.Context, params interface{}) interface{} {
 	return svcPrepare(TransFromJrpcParams(params))
 }
 
-func jrpcSubmit(params interface{}) interface{} {
+func jrpcSubmit(ctx context.Context, params interface{}) interface{} {
 	return svcSubmit(TransFromJrpcParams(params))
 }
 
-func jrpcAbort(params interface{}) interface{} {
+func jrpcAbort(ctx context.Context, params interface{}) interface{} {
 	return svcAbort(TransFromJrpcParams(params))
 }
 

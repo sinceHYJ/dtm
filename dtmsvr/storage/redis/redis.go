@@ -26,7 +26,7 @@ import (
 var conf = &config.Config
 
 // TODO: optimize this, all function should have context as first parameter
-var ctx = context.Background()
+//var ctx = context.Background()
 
 // Store is the storage with redis, all transaction information will bachend with redis
 type Store struct {
