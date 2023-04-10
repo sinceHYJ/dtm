@@ -42,6 +42,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.2
 	github.com/redis/go-redis/v9 v9.0.2
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.28.0
 )
 
 require (

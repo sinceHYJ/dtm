@@ -23,6 +23,7 @@ import (
 	"github.com/dtm-labs/dtm/dtmutil"
 	"github.com/dtm-labs/dtmdriver"
 	"github.com/dtm-labs/logger"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
@@ -62,7 +63,7 @@ func StartSvr(ctx context.Context) *gin.Engine {
 	// start grpc server
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", conf.GrpcPort))
 	logger.FatalIfError(err)
-	s := grpc.NewServer(grpc.ChainUnaryInterceptor(grpcRecover, grpcMetrics, dtmgimp.GrpcServerLog))
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor(grpcRecover, grpcMetrics, dtmgimp.GrpcServerLog, otelgrpc.UnaryServerInterceptor()))
 	dtmgpb.RegisterDtmServer(s, &dtmServer{})
 	reflection.Register(s)
 	logger.Infof("grpc listening at %v", lis.Addr())
