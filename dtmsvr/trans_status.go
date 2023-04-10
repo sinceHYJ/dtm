@@ -34,7 +34,7 @@ func (t *TransGlobal) touchCronTime(ctype cronType, delay uint64) {
 		nextCronTime = dtmutil.GetNextTime(nextCronInterval)
 	}
 
-	GetStore().TouchCronTime(&t.TransGlobalStore, nextCronInterval, nextCronTime)
+	GetStore().TouchCronTime(t.Context, &t.TransGlobalStore, nextCronInterval, nextCronTime)
 	logger.Infof("TouchCronTime for: %s", t.TransGlobalStore.String())
 }
 

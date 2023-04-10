@@ -36,7 +36,7 @@ func topic2urls(topic string) []string {
 }
 
 // Subscribe subscribes topic, create topic if not exist
-func Subscribe(topic, url, remark string) error {
+func Subscribe(ctx context.Context, topic, url, remark string) error {
 	if topic == "" {
 		return errors.New("empty topic")
 	}
@@ -48,9 +48,7 @@ func Subscribe(topic, url, remark string) error {
 		URL:    url,
 		Remark: remark,
 	}
-	kvs := GetStore().FindKV(topicsCat, topic)
-	// TODO heyj 处理ctx
-	ctx := context.Background()
+	kvs := GetStore().FindKV(ctx, topicsCat, topic)
 	if len(kvs) == 0 {
 		return GetStore().CreateKV(ctx, topicsCat, topic, dtmimp.MustMarshalString([]Subscriber{newSubscriber}))
 	}
@@ -68,7 +66,7 @@ func Subscribe(topic, url, remark string) error {
 }
 
 // Unsubscribe unsubscribes the topic
-func Unsubscribe(topic, url string) error {
+func Unsubscribe(ctx context.Context, topic, url string) error {
 	if topic == "" {
 		return errors.New("empty topic")
 	}
@@ -76,7 +74,7 @@ func Unsubscribe(topic, url string) error {
 		return errors.New("empty url")
 	}
 
-	kvs := GetStore().FindKV(topicsCat, topic)
+	kvs := GetStore().FindKV(ctx, topicsCat, topic)
 	if len(kvs) == 0 {
 		return errors.New("no such a topic")
 	}
@@ -102,8 +100,8 @@ func Unsubscribe(topic, url string) error {
 }
 
 // updateTopicsMap updates the topicsMap variable, unsafe for concurrent
-func updateTopicsMap() {
-	kvs := GetStore().FindKV(topicsCat, "")
+func updateTopicsMap(ctx context.Context) {
+	kvs := GetStore().FindKV(ctx, topicsCat, "")
 	for _, kv := range kvs {
 		topic := topicsMap[kv.K]
 		if topic.Version >= kv.Version {

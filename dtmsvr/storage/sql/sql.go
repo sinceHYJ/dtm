@@ -44,9 +44,10 @@ func (s *Store) PopulateData(ctx context.Context, skipDrop bool) {
 }
 
 // FindTransGlobalStore finds GlobalTrans data by gid
-func (s *Store) FindTransGlobalStore(gid string) *storage.TransGlobalStore {
+func (s *Store) FindTransGlobalStore(ctx context.Context, gid string) *storage.TransGlobalStore {
 	trans := &storage.TransGlobalStore{}
-	dbr := dbGet().Model(trans).Where("gid=?", gid).First(trans)
+	db := dbGet().WithContext(ctx)
+	dbr := db.Model(trans).Where("gid=?", gid).First(trans)
 	if dbr.Error == gorm.ErrRecordNotFound {
 		return nil
 	}
@@ -55,13 +56,13 @@ func (s *Store) FindTransGlobalStore(gid string) *storage.TransGlobalStore {
 }
 
 // ScanTransGlobalStores lists GlobalTrans data
-func (s *Store) ScanTransGlobalStores(position *string, limit int64) []storage.TransGlobalStore {
+func (s *Store) ScanTransGlobalStores(ctx context.Context, position *string, limit int64) []storage.TransGlobalStore {
 	globals := []storage.TransGlobalStore{}
 	lid := math.MaxInt64
 	if *position != "" {
 		lid = dtmimp.MustAtoi(*position)
 	}
-	dbr := dbGet().Must().Where("id < ?", lid).Order("id desc").Limit(int(limit)).Find(&globals)
+	dbr := dbGet().MustWithCtx(ctx).Where("id < ?", lid).Order("id desc").Limit(int(limit)).Find(&globals)
 	if dbr.RowsAffected < limit {
 		*position = ""
 	} else {
@@ -78,8 +79,9 @@ func (s *Store) FindBranches(ctx context.Context, gid string) []storage.TransBra
 }
 
 // UpdateBranches update branches info
-func (s *Store) UpdateBranches(branches []storage.TransBranchStore, updates []string) (int, error) {
-	db := dbGet().Clauses(clause.OnConflict{
+func (s *Store) UpdateBranches(ctx context.Context, branches []storage.TransBranchStore, updates []string) (int, error) {
+	db := dbGet().WithContext(ctx)
+	db = db.Clauses(clause.OnConflict{
 		OnConstraint: "gid_branch_uniq",
 		DoUpdates:    clause.AssignmentColumns(updates),
 	}).Create(branches)
@@ -136,11 +138,11 @@ func (s *Store) ChangeGlobalStatus(ctx context.Context, global *storage.TransGlo
 }
 
 // TouchCronTime updates cronTime
-func (s *Store) TouchCronTime(global *storage.TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time) {
+func (s *Store) TouchCronTime(ctx context.Context, global *storage.TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time) {
 	global.UpdateTime = dtmutil.GetNextTime(0)
 	global.NextCronTime = nextCronTime
 	global.NextCronInterval = nextCronInterval
-	dbGet().Must().Model(global).Where("status=? and gid=?", global.Status, global.Gid).
+	dbGet().MustWithCtx(ctx).Model(global).Where("status=? and gid=?", global.Status, global.Gid).
 		Select([]string{"next_cron_time", "update_time", "next_cron_interval"}).Updates(global)
 }
 
@@ -198,13 +200,13 @@ func (s *Store) ResetCronTime(ctx context.Context, after time.Duration, limit in
 }
 
 // ScanKV lists KV pairs
-func (s *Store) ScanKV(cat string, position *string, limit int64) []storage.KVStore {
+func (s *Store) ScanKV(ctx context.Context, cat string, position *string, limit int64) []storage.KVStore {
 	kvs := []storage.KVStore{}
 	lid := math.MaxInt64
 	if *position != "" {
 		lid = dtmimp.MustAtoi(*position)
 	}
-	dbr := dbGet().Must().Where("cat = ? and id < ?", cat, lid).Order("id desc").Limit(int(limit)).Find(&kvs)
+	dbr := dbGet().MustWithCtx(ctx).Where("cat = ? and id < ?", cat, lid).Order("id desc").Limit(int(limit)).Find(&kvs)
 	if dbr.RowsAffected < limit {
 		*position = ""
 	} else {
@@ -214,9 +216,10 @@ func (s *Store) ScanKV(cat string, position *string, limit int64) []storage.KVSt
 }
 
 // FindKV finds key-value pairs
-func (s *Store) FindKV(cat, key string) []storage.KVStore {
+func (s *Store) FindKV(ctx context.Context, cat, key string) []storage.KVStore {
 	kvs := []storage.KVStore{}
-	db := dbGet().Model(&storage.KVStore{})
+	db := dbGet().WithContext(ctx)
+	db = db.Model(&storage.KVStore{})
 	if cat != "" {
 		db = db.Where("cat=?", cat)
 	}
@@ -243,8 +246,9 @@ func (s *Store) UpdateKV(ctx context.Context, kv *storage.KVStore) error {
 }
 
 // DeleteKV deletes key-value pair
-func (s *Store) DeleteKV(cat, key string) error {
-	dbr := dbGet().Where("cat=? and k=?", cat, key).Delete(&storage.KVStore{})
+func (s *Store) DeleteKV(ctx context.Context, cat, key string) error {
+	db := dbGet().WithContext(ctx)
+	dbr := db.Where("cat=? and k=?", cat, key).Delete(&storage.KVStore{})
 	if dbr.Error == nil && dbr.RowsAffected == 0 {
 		return storage.ErrNotFound
 	}

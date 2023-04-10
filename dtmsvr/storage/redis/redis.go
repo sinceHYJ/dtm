@@ -48,7 +48,7 @@ func (s *Store) PopulateData(ctx context.Context, skipDrop bool) {
 }
 
 // FindTransGlobalStore finds GlobalTrans data by gid
-func (s *Store) FindTransGlobalStore(gid string) *storage.TransGlobalStore {
+func (s *Store) FindTransGlobalStore(ctx context.Context, gid string) *storage.TransGlobalStore {
 	logger.Debugf("calling FindTransGlobalStore: %s", gid)
 	r, err := redisGet().Get(ctx, conf.Store.RedisPrefix+"_g_"+gid).Result()
 	if err == redis.Nil {
@@ -61,7 +61,7 @@ func (s *Store) FindTransGlobalStore(gid string) *storage.TransGlobalStore {
 }
 
 // ScanTransGlobalStores lists GlobalTrans data
-func (s *Store) ScanTransGlobalStores(position *string, limit int64) []storage.TransGlobalStore {
+func (s *Store) ScanTransGlobalStores(ctx context.Context, position *string, limit int64) []storage.TransGlobalStore {
 	logger.Debugf("calling ScanTransGlobalStores: %s %d", *position, limit)
 	lid := uint64(0)
 	if *position != "" {
@@ -100,7 +100,7 @@ func (s *Store) FindBranches(ctx context.Context, gid string) []storage.TransBra
 }
 
 // UpdateBranches updates branches info
-func (s *Store) UpdateBranches(branches []storage.TransBranchStore, updates []string) (int, error) {
+func (s *Store) UpdateBranches(ctx context.Context, branches []storage.TransBranchStore, updates []string) (int, error) {
 	return 0, nil // not implemented
 }
 
@@ -274,7 +274,7 @@ return gid
 			return nil
 		}
 		dtmimp.E2P(err)
-		global := s.FindTransGlobalStore(r)
+		global := s.FindTransGlobalStore(ctx, r)
 		if global != nil {
 			return global
 		}
@@ -312,7 +312,7 @@ return tostring(i)
 }
 
 // TouchCronTime updates cronTime
-func (s *Store) TouchCronTime(global *storage.TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time) {
+func (s *Store) TouchCronTime(ctx context.Context, global *storage.TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time) {
 	global.UpdateTime = dtmutil.GetNextTime(0)
 	global.NextCronTime = nextCronTime
 	global.NextCronInterval = nextCronInterval
@@ -334,7 +334,7 @@ redis.call('SET', KEYS[1], ARGV[3], 'EX', ARGV[2])
 }
 
 // ScanKV lists KV pairs
-func (s *Store) ScanKV(cat string, position *string, limit int64) []storage.KVStore {
+func (s *Store) ScanKV(ctx context.Context, cat string, position *string, limit int64) []storage.KVStore {
 	logger.Debugf("calling ScanKV: %s %s %d", cat, *position, limit)
 	lid := uint64(0)
 	if *position != "" {
@@ -364,7 +364,7 @@ func (s *Store) ScanKV(cat string, position *string, limit int64) []storage.KVSt
 }
 
 // FindKV finds key-value pairs
-func (s *Store) FindKV(cat, key string) []storage.KVStore {
+func (s *Store) FindKV(ctx context.Context, cat, key string) []storage.KVStore {
 	var keys []string
 	pattern := conf.Store.RedisPrefix + "_kv_"
 	if cat != "" {
@@ -424,7 +424,7 @@ end
 }
 
 // DeleteKV deletes key-value pair
-func (s *Store) DeleteKV(cat, key string) error {
+func (s *Store) DeleteKV(ctx context.Context, cat, key string) error {
 	affected, err := redisGet().Del(ctx, fmt.Sprintf("%s_kv_%s_%s", conf.Store.RedisPrefix, cat, key)).Result()
 	if err == nil && affected == 0 {
 		return storage.ErrNotFound

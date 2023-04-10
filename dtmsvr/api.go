@@ -59,7 +59,7 @@ func svcPrepareWorkflow(t *TransGlobal) (*storage.TransGlobalStore, []TransBranc
 	_, err := t.saveNew()
 	if err == storage.ErrUniqueConflict { // transaction exists, query the branches
 		st := GetStore()
-		return st.FindTransGlobalStore(t.Gid), st.FindBranches(t.Context, t.Gid), nil
+		return st.FindTransGlobalStore(t.Context, t.Gid), st.FindBranches(t.Context, t.Gid), nil
 	}
 	return &t.TransGlobalStore, []TransBranch{}, err
 }

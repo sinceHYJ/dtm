@@ -302,7 +302,7 @@ func (s *Store) PopulateData(ctx context.Context, skipDrop bool) {
 }
 
 // FindTransGlobalStore finds GlobalTrans data by gid
-func (s *Store) FindTransGlobalStore(gid string) (trans *storage.TransGlobalStore) {
+func (s *Store) FindTransGlobalStore(ctx context.Context, gid string) (trans *storage.TransGlobalStore) {
 	err := s.boltDb.View(func(t *bolt.Tx) error {
 		trans = tGetGlobal(t, gid)
 		return nil
@@ -312,7 +312,7 @@ func (s *Store) FindTransGlobalStore(gid string) (trans *storage.TransGlobalStor
 }
 
 // ScanTransGlobalStores lists GlobalTrans data
-func (s *Store) ScanTransGlobalStores(position *string, limit int64) []storage.TransGlobalStore {
+func (s *Store) ScanTransGlobalStores(ctx context.Context, position *string, limit int64) []storage.TransGlobalStore {
 	globals := []storage.TransGlobalStore{}
 	err := s.boltDb.View(func(t *bolt.Tx) error {
 		cursor := t.Bucket(bucketGlobal).Cursor()
@@ -350,7 +350,7 @@ func (s *Store) FindBranches(ctx context.Context, gid string) []storage.TransBra
 }
 
 // UpdateBranches update branches info
-func (s *Store) UpdateBranches(branches []storage.TransBranchStore, updates []string) (int, error) {
+func (s *Store) UpdateBranches(ctx context.Context, branches []storage.TransBranchStore, updates []string) (int, error) {
 	return 0, nil // not implemented
 }
 
@@ -402,7 +402,7 @@ func (s *Store) ChangeGlobalStatus(ctx context.Context, global *storage.TransGlo
 }
 
 // TouchCronTime updates cronTime
-func (s *Store) TouchCronTime(global *storage.TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time) {
+func (s *Store) TouchCronTime(ctx context.Context, global *storage.TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time) {
 	oldUnix := global.NextCronTime.Unix()
 	global.UpdateTime = dtmutil.GetNextTime(0)
 	global.NextCronTime = nextCronTime
@@ -478,7 +478,7 @@ func (s *Store) ResetCronTime(ctx context.Context, after time.Duration, limit in
 }
 
 // ScanKV lists KV pairs
-func (s *Store) ScanKV(cat string, position *string, limit int64) []storage.KVStore {
+func (s *Store) ScanKV(ctx context.Context, cat string, position *string, limit int64) []storage.KVStore {
 	kvs := []storage.KVStore{}
 	err := s.boltDb.View(func(t *bolt.Tx) error {
 		cursor := t.Bucket(bucketKV).Cursor()
@@ -508,7 +508,7 @@ func (s *Store) ScanKV(cat string, position *string, limit int64) []storage.KVSt
 }
 
 // FindKV finds key-value pairs
-func (s *Store) FindKV(cat, key string) []storage.KVStore {
+func (s *Store) FindKV(ctx context.Context, cat, key string) []storage.KVStore {
 	kvs := []storage.KVStore{}
 	if cat != "" && key != "" {
 		err := s.boltDb.View(func(t *bolt.Tx) error {
@@ -555,7 +555,7 @@ func (s *Store) UpdateKV(ctx context.Context, kv *storage.KVStore) error {
 }
 
 // DeleteKV deletes key-value pair
-func (s *Store) DeleteKV(cat, key string) error {
+func (s *Store) DeleteKV(ctx context.Context, cat, key string) error {
 	return s.boltDb.Update(func(t *bolt.Tx) error {
 		res := tGetKV(t, cat, key)
 		if res == nil {

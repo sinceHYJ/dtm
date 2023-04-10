@@ -86,7 +86,8 @@ func query(c *gin.Context) interface{} {
 	if gid == "" {
 		return errors.New("no gid specified")
 	}
-	trans := GetStore().FindTransGlobalStore(gid)
+	ctx := c.Request.Context()
+	trans := GetStore().FindTransGlobalStore(ctx, gid)
 	branches := GetStore().FindBranches(c.Request.Context(), gid)
 	return map[string]interface{}{"transaction": trans, "branches": branches}
 }
@@ -103,15 +104,16 @@ func all(c *gin.Context) interface{} {
 	gid := c.Query("gid")
 	position := c.Query("position")
 	sLimit := dtmimp.OrString(c.Query("limit"), "100")
-
+	ctx := c.Request.Context()
 	var globals interface{}
 	if len(gid) > 0 {
-		find := GetStore().FindTransGlobalStore(gid)
+		find := GetStore().FindTransGlobalStore(ctx, gid)
 		if find != nil {
 			globals = []interface{}{*find}
 		}
 	} else {
-		globals = GetStore().ScanTransGlobalStores(&position, int64(dtmimp.MustAtoi(sLimit)))
+
+		globals = GetStore().ScanTransGlobalStores(ctx, &position, int64(dtmimp.MustAtoi(sLimit)))
 	}
 	return map[string]interface{}{"transactions": globals, "next_position": position}
 }
@@ -133,7 +135,7 @@ func scanKV(c *gin.Context) interface{} {
 	cat := c.DefaultQuery("cat", "")
 	position := c.Query("position")
 	sLimit := dtmimp.OrString(c.Query("limit"), "100")
-	kv := GetStore().ScanKV(cat, &position, int64(dtmimp.MustAtoi(sLimit)))
+	kv := GetStore().ScanKV(c.Request.Context(), cat, &position, int64(dtmimp.MustAtoi(sLimit)))
 	return map[string]interface{}{"kv": kv, "next_position": position}
 }
 
@@ -141,7 +143,7 @@ func queryKV(c *gin.Context) interface{} {
 	cat := c.DefaultQuery("cat", "")
 	key := c.DefaultQuery("key", "")
 
-	kv := GetStore().FindKV(cat, key)
+	kv := GetStore().FindKV(c.Request.Context(), cat, key)
 	return map[string]interface{}{"kv": kv}
 }
 
@@ -149,15 +151,15 @@ func subscribe(c *gin.Context) interface{} {
 	topic := c.Query("topic")
 	url := c.Query("url")
 	remark := c.Query("remark")
-
-	return Subscribe(topic, url, remark)
+	ctx := c.Request.Context()
+	return Subscribe(ctx, topic, url, remark)
 }
 
 func unsubscribe(c *gin.Context) interface{} {
 	topic := c.Query("topic")
 	url := c.Query("url")
-
-	return Unsubscribe(topic, url)
+	ctx := c.Request.Context()
+	return Unsubscribe(ctx, topic, url)
 }
 
 func deleteTopic(c *gin.Context) interface{} {
@@ -165,6 +167,6 @@ func deleteTopic(c *gin.Context) interface{} {
 	if topic == "" {
 		return errors.New("empty topic")
 	}
-
-	return GetStore().DeleteKV(topicsCat, topic)
+	ctx := c.Request.Context()
+	return GetStore().DeleteKV(ctx, topicsCat, topic)
 }

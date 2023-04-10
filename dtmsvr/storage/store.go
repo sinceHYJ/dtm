@@ -22,19 +22,19 @@ var ErrUniqueConflict = errors.New("storage: UniqueKeyConflict")
 type Store interface {
 	Ping(ctx context.Context) error
 	PopulateData(ctx context.Context, skipDrop bool)
-	FindTransGlobalStore(gid string) *TransGlobalStore
-	ScanTransGlobalStores(position *string, limit int64) []TransGlobalStore
+	FindTransGlobalStore(ctx context.Context, gid string) *TransGlobalStore
+	ScanTransGlobalStores(ctx context.Context, position *string, limit int64) []TransGlobalStore
 	FindBranches(ctx context.Context, gid string) []TransBranchStore
-	UpdateBranches(branches []TransBranchStore, updates []string) (int, error)
+	UpdateBranches(ctx context.Context, branches []TransBranchStore, updates []string) (int, error)
 	LockGlobalSaveBranches(ctx context.Context, gid string, status string, branches []TransBranchStore, branchStart int)
 	MaySaveNewTrans(ctx context.Context, global *TransGlobalStore, branches []TransBranchStore) error
 	ChangeGlobalStatus(ctx context.Context, global *TransGlobalStore, newStatus string, updates []string, finished bool)
-	TouchCronTime(global *TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time)
+	TouchCronTime(ctx context.Context, global *TransGlobalStore, nextCronInterval int64, nextCronTime *time.Time)
 	LockOneGlobalTrans(ctx context.Context, expireIn time.Duration) *TransGlobalStore
 	ResetCronTime(ctx context.Context, after time.Duration, limit int64) (succeedCount int64, hasRemaining bool, err error)
-	ScanKV(cat string, position *string, limit int64) []KVStore
-	FindKV(cat, key string) []KVStore
+	ScanKV(ctx context.Context, cat string, position *string, limit int64) []KVStore
+	FindKV(ctx context.Context, cat, key string) []KVStore
 	UpdateKV(ctx context.Context, kv *KVStore) error
-	DeleteKV(cat, key string) error
+	DeleteKV(ctx context.Context, cat, key string) error
 	CreateKV(ctx context.Context, cat, key, value string) error
 }
