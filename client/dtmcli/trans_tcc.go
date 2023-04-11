@@ -7,6 +7,7 @@
 package dtmcli
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -26,13 +27,13 @@ type TccGlobalFunc func(tcc *Tcc) (*resty.Response, error)
 // dtm dtm server address
 // gid global transaction ID
 // tccFunc define the detail tcc busi
-func TccGlobalTransaction(dtm string, gid string, tccFunc TccGlobalFunc) (rerr error) {
-	return TccGlobalTransaction2(dtm, gid, func(t *Tcc) {}, tccFunc)
+func TccGlobalTransaction(ctx context.Context, dtm string, gid string, tccFunc TccGlobalFunc) (rerr error) {
+	return TccGlobalTransaction2(ctx, dtm, gid, func(t *Tcc) {}, tccFunc)
 }
 
 // TccGlobalTransaction2 new version of TccGlobalTransaction, add custom param
-func TccGlobalTransaction2(dtm string, gid string, custom func(*Tcc), tccFunc TccGlobalFunc) (rerr error) {
-	tcc := &Tcc{TransBase: *dtmimp.NewTransBase(gid, "tcc", dtm, "")}
+func TccGlobalTransaction2(ctx context.Context, dtm string, gid string, custom func(*Tcc), tccFunc TccGlobalFunc) (rerr error) {
+	tcc := &Tcc{TransBase: *dtmimp.NewTransBase(ctx, gid, "tcc", dtm, "")}
 	custom(tcc)
 	rerr = dtmimp.TransCallDtm(&tcc.TransBase, "prepare")
 	if rerr != nil {

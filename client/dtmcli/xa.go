@@ -7,6 +7,7 @@
 package dtmcli
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/url"
@@ -60,13 +61,13 @@ func XaLocalTransaction(qs url.Values, dbConf DBConf, xaFunc XaLocalFunc) error 
 }
 
 // XaGlobalTransaction start a xa global transaction
-func XaGlobalTransaction(server string, gid string, xaFunc XaGlobalFunc) error {
-	return XaGlobalTransaction2(server, gid, func(x *Xa) {}, xaFunc)
+func XaGlobalTransaction(ctx context.Context, server string, gid string, xaFunc XaGlobalFunc) error {
+	return XaGlobalTransaction2(ctx, server, gid, func(x *Xa) {}, xaFunc)
 }
 
 // XaGlobalTransaction2 start a xa global transaction with xa custom function
-func XaGlobalTransaction2(server string, gid string, custom func(*Xa), xaFunc XaGlobalFunc) (rerr error) {
-	xa := &Xa{TransBase: *dtmimp.NewTransBase(gid, "xa", server, "")}
+func XaGlobalTransaction2(ctx context.Context, server string, gid string, custom func(*Xa), xaFunc XaGlobalFunc) (rerr error) {
+	xa := &Xa{TransBase: *dtmimp.NewTransBase(ctx, gid, "xa", server, "")}
 	custom(xa)
 	return dtmimp.XaHandleGlobalTrans(&xa.TransBase, func(action string) error {
 		return dtmimp.TransCallDtm(&xa.TransBase, action)

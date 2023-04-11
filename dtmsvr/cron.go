@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel/trace"
 	"math/rand"
 	"runtime/debug"
 	"time"

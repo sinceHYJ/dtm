@@ -7,6 +7,7 @@
 package dtmcli
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -21,8 +22,8 @@ type Msg struct {
 }
 
 // NewMsg create new msg
-func NewMsg(server string, gid string) *Msg {
-	return &Msg{TransBase: *dtmimp.NewTransBase(gid, "msg", server, "")}
+func NewMsg(ctx context.Context, server string, gid string) *Msg {
+	return &Msg{TransBase: *dtmimp.NewTransBase(ctx, gid, "msg", server, "")}
 }
 
 // Add add a new step
