@@ -94,9 +94,7 @@ func Unsubscribe(ctx context.Context, topic, url string) error {
 		return errors.New("no such an url ")
 	}
 	kvs[0].V = dtmimp.MustMarshalString(subscribers)
-	//TODO heyjd 处理context
-
-	return GetStore().UpdateKV(context.Background(), &kvs[0])
+	return GetStore().UpdateKV(ctx, &kvs[0])
 }
 
 // updateTopicsMap updates the topicsMap variable, unsafe for concurrent
