@@ -70,13 +70,13 @@ func XaLocalTransaction(ctx context.Context, dbConf dtmcli.DBConf, xaFunc XaGrpc
 }
 
 // XaGlobalTransaction start a xa global transaction
-func XaGlobalTransaction(server string, gid string, xaFunc XaGrpcGlobalFunc) error {
-	return XaGlobalTransaction2(server, gid, func(xg *XaGrpc) {}, xaFunc)
+func XaGlobalTransaction(ctx context.Context, server string, gid string, xaFunc XaGrpcGlobalFunc) error {
+	return XaGlobalTransaction2(ctx, server, gid, func(xg *XaGrpc) {}, xaFunc)
 }
 
 // XaGlobalTransaction2 new version of XaGlobalTransaction. support custom
-func XaGlobalTransaction2(server string, gid string, custom func(*XaGrpc), xaFunc XaGrpcGlobalFunc) error {
-	xa := &XaGrpc{TransBase: *dtmimp.NewTransBase(gid, "xa", server, "")}
+func XaGlobalTransaction2(ctx context.Context, server string, gid string, custom func(*XaGrpc), xaFunc XaGrpcGlobalFunc) error {
+	xa := &XaGrpc{TransBase: *dtmimp.NewTransBase(ctx, gid, "xa", server, "")}
 	custom(xa)
 	dc := dtmgimp.MustGetDtmClient(xa.Dtm)
 	req := dtmgimp.GetDtmRequest(&xa.TransBase)

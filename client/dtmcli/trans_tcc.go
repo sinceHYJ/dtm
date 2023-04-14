@@ -52,8 +52,8 @@ func TccGlobalTransaction2(ctx context.Context, dtm string, gid string, custom f
 }
 
 // TccFromQuery tcc from request info
-func TccFromQuery(qs url.Values) (*Tcc, error) {
-	tcc := &Tcc{TransBase: *dtmimp.TransBaseFromQuery(qs)}
+func TccFromQuery(ctx context.Context, qs url.Values) (*Tcc, error) {
+	tcc := &Tcc{TransBase: *dtmimp.TransBaseFromQuery(ctx, qs)}
 	if tcc.Dtm == "" || tcc.Gid == "" {
 		return nil, fmt.Errorf("bad tcc info. dtm: %s, gid: %s parentID: %s", tcc.Dtm, tcc.Gid, tcc.BranchID)
 	}

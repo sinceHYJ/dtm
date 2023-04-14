@@ -29,13 +29,13 @@ type TccGlobalFunc func(tcc *TccGrpc) error
 // dtm dtm server url
 // gid global transaction id
 // tccFunc tcc busi func, define the transaction logic
-func TccGlobalTransaction(dtm string, gid string, tccFunc TccGlobalFunc) (rerr error) {
-	return TccGlobalTransaction2(dtm, gid, func(tg *TccGrpc) {}, tccFunc)
+func TccGlobalTransaction(ctx context.Context, dtm string, gid string, tccFunc TccGlobalFunc) (rerr error) {
+	return TccGlobalTransaction2(ctx, dtm, gid, func(tg *TccGrpc) {}, tccFunc)
 }
 
 // TccGlobalTransaction2 new version of TccGlobalTransaction
-func TccGlobalTransaction2(dtm string, gid string, custom func(*TccGrpc), tccFunc TccGlobalFunc) (rerr error) {
-	tcc := &TccGrpc{TransBase: *dtmimp.NewTransBase(gid, "tcc", dtm, "")}
+func TccGlobalTransaction2(ctx context.Context, dtm string, gid string, custom func(*TccGrpc), tccFunc TccGlobalFunc) (rerr error) {
+	tcc := &TccGrpc{TransBase: *dtmimp.NewTransBase(ctx, gid, "tcc", dtm, "")}
 	custom(tcc)
 	rerr = dtmgimp.DtmGrpcCall(&tcc.TransBase, "Prepare")
 	if rerr != nil {

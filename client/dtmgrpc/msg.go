@@ -7,6 +7,7 @@
 package dtmgrpc
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -24,8 +25,8 @@ type MsgGrpc struct {
 }
 
 // NewMsgGrpc create new msg
-func NewMsgGrpc(server string, gid string, opts ...TransBaseOption) *MsgGrpc {
-	mg := &MsgGrpc{Msg: *dtmcli.NewMsg(server, gid)}
+func NewMsgGrpc(ctx context.Context, server string, gid string, opts ...TransBaseOption) *MsgGrpc {
+	mg := &MsgGrpc{Msg: *dtmcli.NewMsg(ctx, server, gid)}
 
 	for _, opt := range opts {
 		opt(&mg.TransBase)

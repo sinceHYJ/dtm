@@ -29,8 +29,8 @@ type Xa struct {
 }
 
 // XaFromQuery construct xa info from request
-func XaFromQuery(qs url.Values) (*Xa, error) {
-	xa := &Xa{TransBase: *dtmimp.TransBaseFromQuery(qs)}
+func XaFromQuery(ctx context.Context, qs url.Values) (*Xa, error) {
+	xa := &Xa{TransBase: *dtmimp.TransBaseFromQuery(ctx, qs)}
 	xa.Op = dtmimp.EscapeGet(qs, "op")
 	xa.Phase2URL = dtmimp.EscapeGet(qs, "phase2_url")
 	if xa.Gid == "" || xa.BranchID == "" || xa.Op == "" {
@@ -40,8 +40,8 @@ func XaFromQuery(qs url.Values) (*Xa, error) {
 }
 
 // XaLocalTransaction start a xa local transaction
-func XaLocalTransaction(qs url.Values, dbConf DBConf, xaFunc XaLocalFunc) error {
-	xa, err := XaFromQuery(qs)
+func XaLocalTransaction(ctx context.Context, qs url.Values, dbConf DBConf, xaFunc XaLocalFunc) error {
+	xa, err := XaFromQuery(ctx, qs)
 	if err != nil {
 		return err
 	}
