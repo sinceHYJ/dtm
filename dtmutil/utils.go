@@ -160,7 +160,7 @@ func GetNextTime(second int64) *time.Time {
 }
 
 // RunSQLScript 1
-func RunSQLScript(conf dtmcli.DBConf, script string, skipDrop bool) {
+func RunSQLScript(ctx context.Context, conf dtmcli.DBConf, script string, skipDrop bool) {
 	con, err := dtmimp.StandaloneDB(conf)
 	logger.FatalIfError(err)
 	defer func() { _ = con.Close() }()
@@ -172,7 +172,7 @@ func RunSQLScript(conf dtmcli.DBConf, script string, skipDrop bool) {
 		if s == "" || (skipDrop && strings.Contains(s, "drop")) {
 			continue
 		}
-		_, err = dtmimp.DBExec(conf.Driver, con, s)
+		_, err = dtmimp.DBExec(ctx, conf.Driver, con, s)
 		logger.FatalIfError(err)
 		logger.Infof("sql scripts finished: %s", s)
 	}

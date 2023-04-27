@@ -46,9 +46,9 @@ func XaLocalTransaction(ctx context.Context, qs url.Values, dbConf DBConf, xaFun
 		return err
 	}
 	if xa.Op == dtmimp.OpCommit || xa.Op == dtmimp.OpRollback {
-		return dtmimp.XaHandlePhase2(xa.Gid, dbConf, xa.BranchID, xa.Op)
+		return dtmimp.XaHandlePhase2(ctx, xa.Gid, dbConf, xa.BranchID, xa.Op)
 	}
-	return dtmimp.XaHandleLocalTrans(&xa.TransBase, dbConf, func(db *sql.DB) error {
+	return dtmimp.XaHandleLocalTrans(ctx, &xa.TransBase, dbConf, func(db *sql.DB) error {
 		err := xaFunc(db, xa)
 		if err != nil {
 			return err

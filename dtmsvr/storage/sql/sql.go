@@ -29,18 +29,16 @@ type Store struct {
 
 // Ping execs ping cmd to db
 func (s *Store) Ping(ctx context.Context) error {
-	// TODO heyjd 待补充
 	db, err := dtmimp.StandaloneDB(conf.Store.GetDBConf())
 	dtmimp.E2P(err)
-	_, err = db.Exec("select 1")
+	_, err = db.ExecContext(ctx, "select 1")
 	return err
 }
 
 // PopulateData populates data to db
 func (s *Store) PopulateData(ctx context.Context, skipDrop bool) {
 	file := fmt.Sprintf("%s/dtmsvr.storage.%s.sql", dtmutil.GetSQLDir(), conf.Store.Driver)
-	//TODO heyjd 待补充
-	dtmutil.RunSQLScript(conf.Store.GetDBConf(), file, skipDrop)
+	dtmutil.RunSQLScript(ctx, conf.Store.GetDBConf(), file, skipDrop)
 }
 
 // FindTransGlobalStore finds GlobalTrans data by gid
@@ -170,7 +168,7 @@ func (s *Store) LockOneGlobalTrans(ctx context.Context, expireIn time.Duration) 
 		getTimeStr(conf.RetryInterval),
 		owner,
 		where)
-	affected, err := dtmimp.DBExec(conf.Store.Driver, db.ToSQLDB(), sql)
+	affected, err := dtmimp.DBExec(ctx, conf.Store.Driver, db.ToSQLDB(), sql)
 
 	dtmimp.PanicIf(err != nil, err)
 	if affected == 0 {
@@ -194,8 +192,7 @@ func (s *Store) ResetCronTime(ctx context.Context, after time.Duration, limit in
 		getTimeStr(0),
 		getTimeStr(0),
 		where)
-	// TODO heyjd 需要处理sql DB
-	affected, err := dtmimp.DBExec(conf.Store.Driver, dbGet().ToSQLDB(), sql)
+	affected, err := dtmimp.DBExec(ctx, conf.Store.Driver, dbGet().ToSQLDB(), sql)
 	return affected, affected == limit, err
 }
 
