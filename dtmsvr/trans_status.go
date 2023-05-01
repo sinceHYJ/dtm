@@ -1,8 +1,11 @@
 package dtmsvr
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"math"
 	"net/url"
 	"strings"
@@ -143,6 +146,7 @@ func (t *TransGlobal) getHTTPResult(uri string, branchID, op string, branchPaylo
 		SetHeader("Content-type", "application/json").
 		SetHeaders(t.Ext.Headers).
 		SetHeaders(t.TransOptions.BranchHeaders).
+		SetHeaderMultiValues(injectTelemetryHttpCtx(t.Context)).
 		Execute(t.determineHTTPRequestMethod(branchPayload), uri)
 	if err != nil {
 		return err
@@ -173,6 +177,7 @@ func (t *TransGlobal) getJSONRPCResult(uri string, branchID, op string, branchPa
 		SetHeader("Content-type", "application/json").
 		SetHeaders(t.Ext.Headers).
 		SetHeaders(t.TransOptions.BranchHeaders).
+		SetHeaderMultiValues(injectTelemetryHttpCtx(t.Context)).
 		Post(uri)
 	if err == nil {
 		err = dtmcli.HTTPResp2DtmError(resp)
@@ -261,4 +266,13 @@ func (t *TransGlobal) getNextCronInterval(ctype cronType) int64 {
 	} else {
 		return conf.RetryInterval
 	}
+}
+
+func injectTelemetryHttpCtx(ctx context.Context) propagation.HeaderCarrier {
+	propagator := otel.GetTextMapPropagator()
+	hc := propagation.HeaderCarrier{}
+	if propagator != nil {
+		propagator.Inject(ctx, hc)
+	}
+	return hc
 }
