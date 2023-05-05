@@ -103,6 +103,7 @@ func TransFromDtmRequest(ctx context.Context, c *dtmgpb.DtmRequest) *TransGlobal
 			RetryLimit:     o.RetryLimit,
 		},
 	}}
+	// todo 这里需要copy 一下context
 	r.Context = ctx
 	r.ReqExtra = c.ReqExtra
 	if c.Steps != "" {
