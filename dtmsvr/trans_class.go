@@ -70,7 +70,7 @@ func TransFromContext(c *gin.Context) *TransGlobal {
 	b, err := c.GetRawData()
 	e2p(err)
 	m := TransGlobal{}
-	m.Context = copyCtx(c.Request.Context())
+	m.Context = c.Request.Context()
 	dtmimp.MustUnmarshal(b, &m)
 	m.Status = dtmimp.Escape(m.Status)
 	m.Gid = dtmimp.Escape(m.Gid)
@@ -103,7 +103,6 @@ func TransFromDtmRequest(ctx context.Context, c *dtmgpb.DtmRequest) *TransGlobal
 			RetryLimit:     o.RetryLimit,
 		},
 	}}
-	// todo 这里需要copy 一下context
 	r.Context = ctx
 	r.ReqExtra = c.ReqExtra
 	if c.Steps != "" {

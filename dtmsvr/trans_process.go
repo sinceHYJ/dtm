@@ -33,6 +33,8 @@ func (t *TransGlobal) process(branches []TransBranch) error {
 	}
 
 	if !t.WaitResult {
+		// copy ctx for routine
+		t.Context = copyCtx(t.Context)
 		go func() {
 			err := t.processInner(branches)
 			if err != nil && !errors.Is(err, dtmimp.ErrOngoing) {
